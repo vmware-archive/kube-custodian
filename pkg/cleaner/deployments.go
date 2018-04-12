@@ -4,38 +4,30 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	appsv1 "k8s.io/api/apps/v1"
-	// corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
 	utils "github.com/jjo/kube-custodian/pkg/utils"
 )
 
-const (
-	kubeJobNameLabel = "job-name"
-)
+// DeleteDeployments ...
+func DeleteDeployments(clientset kubernetes.Interface, dryRun bool, namespace string, requiredLabels []string) (int, error) {
 
-// DeleteJobs ...
-func DeleteDeployments(clientset *kubernetes.Clientset, dryRun bool, namespace string, requiredLabels []string) error {
+	count := 0
 	deploys, err := clientset.AppsV1().Deployments(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorf("List deploys: %v", err)
-		return err
-	}
-
-	if len(requiredLabels) < 1 {
-		log.Fatal("At least one required-label is needed")
-	}
-	log.Infof("Required labels: %v ...", requiredLabels)
-	if err != nil {
-		log.Error(err)
-		return err
+		return count, err
 	}
 
 	deploysArray := make([]appsv1.Deployment, 0)
 
 	for _, deploy := range deploys.Items {
-		log.Debugf("Deploy %q ...", deploy.Name)
+		log.Debugf("Deploy %s.%s ...", deploy.Namespace, deploy.Name)
+		if isSystemNS(deploy.Namespace) {
+			log.Debugf("Deploy %q in system NS, skipping", deploy.Name)
+			continue
+		}
 
 		if utils.LabelsSubSet(deploy.Labels, requiredLabels) {
 			log.Debugf("Deploy %q has required labels (%v), skipping", deploy.Name, deploy.Labels)
@@ -50,13 +42,15 @@ func DeleteDeployments(clientset *kubernetes.Clientset, dryRun bool, namespace s
 	for _, deploy := range deploysArray {
 		log.Debugf("Deploy %q about to be deleted", deploy.Name)
 
-		log.Infof("Deleting Deploy %s.%s ... %s", deploy.Namespace, deploy.Name, dryRunStr)
+		log.Infof("%sDeleting Deploy %s.%s ... ", dryRunStr, deploy.Namespace, deploy.Name)
 		if !dryRun {
 			if err := clientset.AppsV1().Deployments(deploy.Namespace).Delete(deploy.Name, &metav1.DeleteOptions{}); err != nil {
 				log.Errorf("failed to delete Deploy: %v", err)
+				continue
 			}
+			count++
 		}
 
 	}
-	return nil
+	return count, nil
 }

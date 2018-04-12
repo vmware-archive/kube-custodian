@@ -19,9 +19,12 @@ import (
 )
 
 const (
-	flagDryRun  = "dry-run"
-	flagVerbose = "verbose"
+	flagDryRun        = "dry-run"
+	flagAllNamespaces = "all-namespaces"
+	flagVerbose       = "verbose"
 )
+
+const ()
 
 var clientConfig clientcmd.ClientConfig
 var overrides clientcmd.ConfigOverrides
@@ -30,6 +33,7 @@ var overrides clientcmd.ConfigOverrides
 func init() {
 	rootCmd.PersistentFlags().Bool(flagDryRun, false, "Dry run")
 	rootCmd.PersistentFlags().CountP(flagVerbose, "v", "Increase verbosity")
+	rootCmd.PersistentFlags().Bool(flagAllNamespaces, false, "All namespaces")
 
 	// The "usual" clientcmd/kubectl flags
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
@@ -51,6 +55,15 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		goflag.CommandLine.Parse([]string{})
 		flags := cmd.Flags()
+
+		// Need either --all-namespaces or --namespace=...
+		allNS, _ := flags.GetBool(flagAllNamespaces)
+		namespace, _ := flags.GetString("namespace")
+		log.Debugf("jjo: %v %v", allNS, namespace)
+		if allNS == (len(namespace) > 0) {
+			log.Fatalf("Cowardly refusing to use a default namespace, provide --namespace=<NS> xor --all-namespaces")
+		}
+
 		out := cmd.OutOrStderr()
 		log.SetOutput(out)
 
