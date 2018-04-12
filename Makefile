@@ -30,6 +30,9 @@ docker-build:
 docker-push:
 	docker push $(DOCKER_IMG)
 
+docker-clean:
+	docker image rm $(DOCKER_IMG)
 
 
-.PHONY: all build lint test clean
+
+.PHONY: all build lint test clean docker-build docker-push docker-clean
