@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"regexp"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -49,7 +47,7 @@ var deleteCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		cleaner.SystemRE = regexp.MustCompile(sysNS)
+		cleaner.SetSystemNS(sysNS)
 		cleaner.DeleteJobs(client, dryRun, namespace, requiredLabels)
 		cleaner.DeleteDeployments(client, dryRun, namespace, requiredLabels)
 	},

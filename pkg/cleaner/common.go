@@ -18,3 +18,6 @@ func init() {
 func isSystemNS(namespace string) bool {
 	return SystemRE.MatchString(namespace)
 }
+func SetSystemNS(namespace_re string) {
+	SystemRE = regexp.MustCompile(namespace_re)
+}
