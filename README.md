@@ -26,7 +26,13 @@ $ go get github.com/bitnami-labs/kube-custodian
 
 ## Docker image
 
-TBD
+You can build your own docker image (`docker build -t YOU/kube-custodian .`)
+or use pre-built as:
+
+```
+docker run -it -v $HOME/.kube:/.kube quay.io/jjo/kube-custodian \
+  -v --namespace=default --dry-run delete --required-labels created_by
+```
 
 ## Source
 
