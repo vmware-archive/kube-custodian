@@ -1,6 +1,20 @@
 NAME ?= kube-custodian
 LDFLAGS ?= -ldflags="-s -w -X main.version=$(VERSION) -X main.revision=$(REVISION)"
+VERSION ?= master
+GOARCH ?= amd64
+
 GOSRC = $(shell find -name '*.go'|fgrep -v vendor/)
+
+ifeq ($(GOARCH), arm)
+DOCKERFILE_SED_EXPR?=s,FROM alpine:,FROM multiarch/alpine:armhf-v,
+DOCKER_IMG_FULL=$(DOCKER_IMG):arm-$(VERSION)
+else ifeq ($(GOARCH), arm64)
+DOCKERFILE_SED_EXPR?=s,FROM alpine:,FROM multiarch/alpine:aarch64-v,
+DOCKER_IMG_FULL=$(DOCKER_IMG):arm64-$(VERSION)
+else
+DOCKERFILE_SED_EXPR?=
+DOCKER_IMG_FULL=$(DOCKER_IMG):$(VERSION)
+endif
 GOPKGS = $(shell glide novendor)
 
 DOCKER_REPO ?= quay.io
@@ -12,7 +26,7 @@ all: build
 build: bin/$(NAME)
 
 bin/$(NAME): $(GOSRC)
-	go build $(LDFLAGS) -o bin/$(NAME)
+	GOARCH=$(GOARCH) go build $(LDFLAGS) -o bin/$(NAME)
 
 lint:
 	golint $(GOPKGS)
@@ -24,8 +38,12 @@ clean:
 	rm -fv bin/$(NAME)
 
 
-docker-build:
-	docker build -t $(DOCKER_IMG) .
+docker-build: Dockerfile.$(GOARCH).run
+	docker build --build-arg SRC_TAG=$(VERSION) --build-arg ARCH=$(GOARCH) -t $(DOCKER_IMG_FULL) -f $(^) .
+
+Dockerfile.%.run: Dockerfile
+	@sed -e "$(DOCKERFILE_SED_EXPR)" Dockerfile > $(@)
+
 
 docker-push:
 	docker push $(DOCKER_IMG)

@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jjo/kube-custodian.svg?branch=master)](https://travis-ci.org/jjo/kube-custodian)
+
 kube-custodian - Kubernetes cleanup tool
 
 ## Purpose

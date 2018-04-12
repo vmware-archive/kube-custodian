@@ -1,0 +1,37 @@
+language: bash
+
+os:
+  - linux
+
+services:
+  - docker
+
+env:
+  global:
+    - ARCHS="amd64 arm arm64"
+
+before_install: # update to 17.09 to get COPY --from (multistage builds)
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
+  - sudo apt-get update
+  - sudo apt-get -y install docker-ce
+  - sudo apt-get -y install qemu-user-static
+
+script:
+  - |
+    make build test
+    make multiarch-setup
+    for arch in ${ARCHS:?}; do
+      make docker-build GOARCH=${arch}
+    done
+
+after_success:
+  - |
+    exit 0
+    if [[ "$TRAVIS_BRANCH" == master && \
+          "$TRAVIS_PULL_REQUEST" == false ]]; then
+      docker login -u="${DOCKER_USERNAME:?}" -p="${DOCKER_PASSWORD:?}";
+      for arch in ${ARCHS:?}; do
+        make docker-push GOARCH=${arch}
+      done
+    fi
