@@ -1,7 +1,16 @@
-language: bash
+language: go
 
 os:
   - linux
+
+go:
+  # NB: order matters - matrix items that don't specify will use the
+  # first value (ditto for `os` below)
+  - 1.9.x
+
+os:
+  - linux
+  - osx
 
 services:
   - docker
@@ -12,15 +21,21 @@ env:
     - secure: "L0GQPhdR5x0cXWur5fJRD/73ftU93F90th13fvUniVBF0KA6WJicWP8DNJe5cjzvo8+sbhtUBl6i+pCUOOut3tkY8i5KtFG3lsYqYfsiM3B96bXeSyrUjtYzkFpItQZUmUSv6uPvPo5lTCMAmweI/A9PBSsGBptB92z3RNl8l8zi3xXG+rLhUP+9Z1SoE8flHEqmUgYHGQe15FYpAKKa31y/4mg41db0UrOocGAoYg0lXFBYTEZKJO1lCHGFBMEYCoOIX86Pph2fyrWNYTG+PGnCH85PsPbGm8rK2KHy4u8FSBZAHZHRH/EaN19SmOKSGizK1sC4QEuLqPh5GH9DwKQcaFD8dpLHJX7YRCTA9C7Ty7bkjQeplAVF5QDGAmS4qSFSPb0934KQ9V4FTmh47BjhwQudQrTShJavvnVrl5EfAdaGAEPfUURBPIKSNgsIqdMStysIFrgcSfqrcLmph1u0gnYdpvkQ/Jutr/agcTRVrHwvvkM3AehZo9jdZnEA1XA4GGVQXGQEAiXxYfmRRrLvcA/dTyROoh1fO3w31aOn6NXzZBEPHxP3azDWzFEGw+4Ampc+NAuol+CDsDY0o7gelh7Y+0wVB0L/vl2H4jEq3dnI4mFxv8R5jzObpEGxu6f5yTmuInMEIwDzFDeiCKXFsMk8MNaRcYSWPxcsGUI="
 
 before_install: # update to 17.09 to get COPY --from (multistage builds)
-  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
-  - sudo apt-get update
-  - sudo apt-get -y install docker-ce
-  - sudo apt-get -y install qemu-user-static
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
+      sudo apt-get update
+      sudo apt-get -y install docker-ce
+      sudo apt-get -y install qemu-user-static
+    fi
 
 script:
   - |
-    make build test
+    go get github.com/Masterminds/glide
+    make build
+    make test
+    [[ "$TRAVIS_OS_NAME" == "linux" ]] || exit 0
     make multiarch-setup
     for arch in ${ARCHS:?}; do
       make docker-build GOARCH=${arch}
@@ -28,6 +43,7 @@ script:
 
 after_success:
   - |
+    [[ "$TRAVIS_OS_NAME" == "linux" ]] || exit 0
     if [[ "$TRAVIS_BRANCH" == master && \
           "$TRAVIS_PULL_REQUEST" == false ]]; then
       docker login -u="${DOCKER_USERNAME:?}" -p="${DOCKER_PASSWORD:?}";

@@ -3,7 +3,7 @@ LDFLAGS ?= -ldflags="-s -w -X main.version=$(VERSION) -X main.revision=$(REVISIO
 VERSION ?= master
 GOARCH ?= amd64
 
-GOSRC = $(shell find -name '*.go'|fgrep -v vendor/)
+GOSRC = $(shell find *.go pkg cmd -name '*.go')
 
 ifeq ($(GOARCH), arm)
 DOCKERFILE_SED_EXPR?=s,FROM alpine:,FROM multiarch/alpine:armhf-v,
@@ -52,5 +52,8 @@ docker-clean:
 	docker image rm $(DOCKER_IMG)
 
 
+multiarch-setup:
+	docker run --rm --privileged multiarch/qemu-user-static:register
+	dpkg -l qemu-user-static
 
 .PHONY: all build lint test clean docker-build docker-push docker-clean
