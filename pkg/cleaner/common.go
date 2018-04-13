@@ -4,20 +4,22 @@ import (
 	"regexp"
 )
 
+// SystemNS has default "system" namespaces regexp
 const (
 	SystemNS = ".*(-system|monitoring|logging|ingress)"
 )
 
-// SystemRE set from flags at cmd/delete.go
-var SystemRE *regexp.Regexp
+var systemRE *regexp.Regexp
 
 func init() {
-	SystemRE = regexp.MustCompile(SystemNS)
+	systemRE = regexp.MustCompile(SystemNS)
 }
 
 func isSystemNS(namespace string) bool {
-	return SystemRE.MatchString(namespace)
+	return systemRE.MatchString(namespace)
 }
-func SetSystemNS(namespace_re string) {
-	SystemRE = regexp.MustCompile(namespace_re)
+
+// SetSystemNS is used from cmd/delete.go flags
+func SetSystemNS(namespaceRe string) {
+	systemRE = regexp.MustCompile(namespaceRe)
 }
