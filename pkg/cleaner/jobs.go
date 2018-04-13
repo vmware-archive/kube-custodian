@@ -84,7 +84,7 @@ func DeleteJobs(clientset kubernetes.Interface, dryRun bool, namespace string, r
 		for _, pod := range jobPods {
 			log.Infof("%s  Deleting Pod %s.%s ...", dryRunStr, pod.Namespace, pod.Name)
 			if !dryRun {
-				if err := clientset.Core().Pods(pod.Namespace).Delete(pod.Name, &metav1.DeleteOptions{}); err != nil {
+				if err := clientset.CoreV1().Pods(pod.Namespace).Delete(pod.Name, &metav1.DeleteOptions{}); err != nil {
 					log.Errorf("failed to delete Pod: %v", err)
 					continue
 				}
