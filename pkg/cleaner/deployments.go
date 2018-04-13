@@ -6,12 +6,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-
-	utils "github.com/jjo/kube-custodian/pkg/utils"
 )
 
 // DeleteDeployments ...
-func DeleteDeployments(clientset kubernetes.Interface, dryRun bool, namespace string, requiredLabels []string) (int, error) {
+func DeleteDeployments(clientset kubernetes.Interface, dryRun bool, namespace string) (int, error) {
 
 	count := 0
 	deploys, err := clientset.AppsV1().Deployments(namespace).List(metav1.ListOptions{})
@@ -24,17 +22,11 @@ func DeleteDeployments(clientset kubernetes.Interface, dryRun bool, namespace st
 
 	for _, deploy := range deploys.Items {
 		log.Debugf("Deploy %s.%s ...", deploy.Namespace, deploy.Name)
-		if isSystemNS(deploy.Namespace) {
-			log.Debugf("Deploy %q in system NS, skipping", deploy.Name)
+		if skipFromMeta(&deploy.ObjectMeta) {
 			continue
 		}
 
-		if utils.LabelsSubSet(deploy.Labels, requiredLabels) {
-			log.Debugf("Deploy %q has required labels (%v), skipping", deploy.Name, deploy.Labels)
-			continue
-		}
-
-		log.Debugf("Deploy %q missing required labels, will be marked for deletion", deploy.Name)
+		log.Debugf("Deploy %q marked for deletion", deploy.Name)
 		deploysArray = append(deploysArray, deploy)
 	}
 
@@ -50,7 +42,6 @@ func DeleteDeployments(clientset kubernetes.Interface, dryRun bool, namespace st
 			}
 			count++
 		}
-
 	}
 	return count, nil
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func Test_DeleteJobs(t *testing.T) {
-	job_obj := &batchv1.JobList{
+	jobObj := &batchv1.JobList{
 		Items: []batchv1.Job{
 			batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{
@@ -45,7 +45,6 @@ func Test_DeleteJobs(t *testing.T) {
 					Succeeded: 0,
 				},
 			},
-			// will be skipped from its .*-system namespace
 			batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "job4",
@@ -58,7 +57,7 @@ func Test_DeleteJobs(t *testing.T) {
 		},
 	}
 
-	pod_obj := &corev1.PodList{
+	podObj := &corev1.PodList{
 		Items: []corev1.Pod{
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -74,29 +73,30 @@ func Test_DeleteJobs(t *testing.T) {
 			},
 		},
 	}
-	SetSystemNS("")
-	// two non system Succeeded Jobs and one Pod
-	clientset := fake.NewSimpleClientset(job_obj, pod_obj)
-	count, err := DeleteJobs(clientset, false, "", []string{"xxx"})
+	t.Logf("Should delete all jobs except those in kube-system and monitoring NS")
+	SetSkipMeta("", []string{"xxx"})
+	clientset := fake.NewSimpleClientset(jobObj, podObj)
+	count, err := DeleteJobs(clientset, false, "")
 	assertEqual(t, err, nil)
 	assertEqual(t, count, 3)
 
-	// no one, as the 1st two now have the required label
-	clientset = fake.NewSimpleClientset(job_obj, pod_obj)
-	count, err = DeleteJobs(clientset, false, "", []string{"created_by"})
-	assertEqual(t, err, nil)
-	assertEqual(t, count, 0)
-
-	// only job1 in ns1 and its pod1
-	clientset = fake.NewSimpleClientset(job_obj, pod_obj)
-	count, err = DeleteJobs(clientset, false, "ns1", []string{"xxx"})
+	t.Logf("Should delete only the jobs in ns1 and its pod")
+	clientset = fake.NewSimpleClientset(jobObj, podObj)
+	count, err = DeleteJobs(clientset, false, "ns1")
 	assertEqual(t, err, nil)
 	assertEqual(t, count, 2)
 
-	// 3of4 Jobs Succeeded (+ pod1), as sysNS has been overridden
-	SetSystemNS(".*sYsTEM")
-	clientset = fake.NewSimpleClientset(job_obj, pod_obj)
-	count, err = DeleteJobs(clientset, false, "", []string{"xxx"})
+	SetSkipMeta("", nil)
+	t.Logf("Should not delete any, as the first two have the required label")
+	clientset = fake.NewSimpleClientset(jobObj, podObj)
+	count, err = DeleteJobs(clientset, false, "")
+	assertEqual(t, err, nil)
+	assertEqual(t, count, 0)
+
+	t.Logf("Should delete all jobs, as namespaceRE and skipLabels don't match any")
+	SetSkipMeta(".*sYsTEM", []string{"xxx"})
+	clientset = fake.NewSimpleClientset(jobObj, podObj)
+	count, err = DeleteJobs(clientset, false, "")
 	assertEqual(t, err, nil)
 	assertEqual(t, count, 4)
 

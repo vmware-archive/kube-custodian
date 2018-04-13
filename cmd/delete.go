@@ -8,14 +8,14 @@ import (
 )
 
 const (
-	flagRequiredLabels = "required-labels"
-	flagSystemNS       = "sys-namespaces-re"
+	flagSkipLabels      = "skip-labels"
+	flagSkipNamespaceRe = "skip-namespace-re"
 )
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
-	deleteCmd.PersistentFlags().StringSlice(flagRequiredLabels, []string{"created_by"}, "Labels required for resources to be skipped from scanning")
-	deleteCmd.PersistentFlags().String(flagSystemNS, cleaner.SystemNS, "\"system\" namespaces to skip")
+	deleteCmd.PersistentFlags().StringSlice(flagSkipLabels, cleaner.SkipMetaDefault.Labels, "Labels required for resources to be skipped from scanning")
+	deleteCmd.PersistentFlags().String(flagSkipNamespaceRe, cleaner.SkipMetaDefault.NamespaceRE, "Regex of namespaces to skip, typically 'system' ones and alike")
 }
 
 var deleteCmd = &cobra.Command{
@@ -23,7 +23,7 @@ var deleteCmd = &cobra.Command{
 	Short: "Delete resources",
 	Run: func(cmd *cobra.Command, args []string) {
 		flags := cmd.Flags()
-		requiredLabels, err := flags.GetStringSlice(flagRequiredLabels)
+		skipLabels, err := flags.GetStringSlice(flagSkipLabels)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -37,18 +37,20 @@ var deleteCmd = &cobra.Command{
 		}
 		client := NewKubeClient(cmd)
 
-		if len(requiredLabels) < 1 {
-			log.Fatal("At least one required-label is needed")
+		if len(skipLabels) < 1 {
+			log.Fatal("At least one skip-labels is needed")
 		}
-		log.Infof("Required labels: %v ...", requiredLabels)
+		log.Infof("Required labels: %v ...", skipLabels)
 
-		sysNS, err := flags.GetString(flagSystemNS)
+		skipNSRe, err := flags.GetString(flagSkipNamespaceRe)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		cleaner.SetSystemNS(sysNS)
-		cleaner.DeleteJobs(client, dryRun, namespace, requiredLabels)
-		cleaner.DeleteDeployments(client, dryRun, namespace, requiredLabels)
+		cleaner.SetSkipMeta(skipNSRe, skipLabels)
+		cleaner.DeleteDeployments(client, dryRun, namespace)
+		cleaner.DeleteStatefulSets(client, dryRun, namespace)
+		cleaner.DeleteJobs(client, dryRun, namespace)
+		cleaner.DeletePods(client, dryRun, namespace)
 	},
 }
