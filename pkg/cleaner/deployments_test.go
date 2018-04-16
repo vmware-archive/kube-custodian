@@ -11,7 +11,7 @@ import (
 func Test_DeleteDeployments(t *testing.T) {
 	obj := &appsv1.DeploymentList{
 		Items: []appsv1.Deployment{
-			appsv1.Deployment{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dp1",
 					Namespace: "ns1",
@@ -20,7 +20,7 @@ func Test_DeleteDeployments(t *testing.T) {
 					},
 				},
 			},
-			appsv1.Deployment{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dp2",
 					Namespace: "ns2",
@@ -29,19 +29,19 @@ func Test_DeleteDeployments(t *testing.T) {
 					},
 				},
 			},
-			appsv1.Deployment{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dp3",
 					Namespace: "ns3",
 				},
 			},
-			appsv1.Deployment{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubernetes-dashboard",
 					Namespace: "kube-system",
 				},
 			},
-			appsv1.Deployment{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "prometheus",
 					Namespace: "monitoring",
@@ -49,32 +49,39 @@ func Test_DeleteDeployments(t *testing.T) {
 			},
 		},
 	}
+	var c Common
+
 	t.Logf("Should delete all deploys except those in kube-system and monitoring NS")
-	SetSkipMeta("", []string{"xxx"})
-	clientset := fake.NewSimpleClientset(obj)
-	count, err := DeleteDeployments(clientset, false, "")
+	c = *CommonDefaults
+	c.SkipLabels = []string{"xxx"}
+	c.Init(fake.NewSimpleClientset(obj))
+	count, err := c.DeleteDeployments()
 	assertEqual(t, err, nil)
 	assertEqual(t, count, 3)
 
 	t.Logf("Should delete only deploys in ns1")
-	clientset = fake.NewSimpleClientset(obj)
-	count, err = DeleteDeployments(clientset, false, "ns1")
+	c = *CommonDefaults
+	c.SkipLabels = []string{"xxx"}
+	c.Namespace = "ns1"
+	c.Init(fake.NewSimpleClientset(obj))
+	count, err = c.DeleteDeployments()
 	assertEqual(t, err, nil)
 	assertEqual(t, count, 1)
 
 	t.Logf("Should delete only one deploy, as the other two candidates have the 'created_by' label")
-	SetSkipMeta("", nil)
-	clientset = fake.NewSimpleClientset(obj)
-	count, err = DeleteDeployments(clientset, false, "")
+	c = *CommonDefaults
+	c.Init(fake.NewSimpleClientset(obj))
+	count, err = c.DeleteDeployments()
 	assertEqual(t, err, nil)
 	assertEqual(t, count, 1)
 
 	// all, as sysNS has been overridden
 	t.Logf("Should delete all deploys, as namespaceRE and skipLabels don't match any")
-	SetSkipMeta(".*sYsTEM", []string{"xxx"})
-	clientset = fake.NewSimpleClientset(obj)
-	count, err = DeleteDeployments(clientset, false, "")
+	c = *CommonDefaults
+	c.SkipNamespaceRE = ".*sYsTEM"
+	c.SkipLabels = []string{"xxx"}
+	c.Init(fake.NewSimpleClientset(obj))
+	count, err = c.DeleteDeployments()
 	assertEqual(t, err, nil)
 	assertEqual(t, count, 5)
-
 }

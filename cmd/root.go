@@ -24,8 +24,6 @@ const (
 	flagVerbose       = "verbose"
 )
 
-const ()
-
 var clientConfig clientcmd.ClientConfig
 var overrides clientcmd.ConfigOverrides
 

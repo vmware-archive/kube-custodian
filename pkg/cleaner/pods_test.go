@@ -11,7 +11,7 @@ import (
 func Test_DeletePodsCond(t *testing.T) {
 	obj := &corev1.PodList{
 		Items: []corev1.Pod{
-			corev1.Pod{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "pod1",
 					Namespace: "ns1",
@@ -20,7 +20,7 @@ func Test_DeletePodsCond(t *testing.T) {
 					},
 				},
 			},
-			corev1.Pod{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "pod2",
 					Namespace: "ns2",
@@ -29,19 +29,19 @@ func Test_DeletePodsCond(t *testing.T) {
 					},
 				},
 			},
-			corev1.Pod{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "pod3",
 					Namespace: "ns3",
 				},
 			},
-			corev1.Pod{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubernetes-dashboard-deadbeefed-quack",
 					Namespace: "kube-system",
 				},
 			},
-			corev1.Pod{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "prometheus",
 					Namespace: "monitoring",
@@ -49,10 +49,12 @@ func Test_DeletePodsCond(t *testing.T) {
 			},
 		},
 	}
+	var c Common
+
 	t.Logf("Should delete all pods")
-	SetSkipMeta("", nil)
-	clientset := fake.NewSimpleClientset(obj)
-	count, err := DeletePodsCond(clientset, false, "",
+	c = *CommonDefaults
+	c.Init(fake.NewSimpleClientset(obj))
+	count, err := c.DeletePodsCond("",
 		func(pod *corev1.Pod) bool {
 			return true
 		})
@@ -60,8 +62,9 @@ func Test_DeletePodsCond(t *testing.T) {
 	assertEqual(t, count, 5)
 
 	t.Logf("Should delete a single filterIn() Pod")
-	clientset = fake.NewSimpleClientset(obj)
-	count, err = DeletePodsCond(clientset, false, "",
+	c = *CommonDefaults
+	c.Init(fake.NewSimpleClientset(obj))
+	count, err = c.DeletePodsCond("",
 		func(pod *corev1.Pod) bool {
 			return pod.Labels["created_by"] == "foo"
 		})
@@ -69,13 +72,12 @@ func Test_DeletePodsCond(t *testing.T) {
 	assertEqual(t, count, 1)
 
 	t.Logf("Should not delete any pods")
-	SetSkipMeta("", nil)
-	clientset = fake.NewSimpleClientset(obj)
-	count, err = DeletePodsCond(clientset, false, "",
+	c = *CommonDefaults
+	c.Init(fake.NewSimpleClientset(obj))
+	count, err = c.DeletePodsCond("",
 		func(pod *corev1.Pod) bool {
 			return false
 		})
 	assertEqual(t, err, nil)
 	assertEqual(t, count, 0)
-
 }

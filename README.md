@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/jjo/kube-custodian.svg?branch=master)](https://travis-ci.org/jjo/kube-custodian)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jjo/kube-custodian)](https://goreportcard.com/report/github.com/jjo/kube-custodian)
 
 kube-custodian - Kubernetes cleanup tool
 
