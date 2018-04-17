@@ -8,7 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func Test_DeletePodsCond(t *testing.T) {
+func Test_updatePodsCond(t *testing.T) {
 	obj := &corev1.PodList{
 		Items: []corev1.Pod{
 			{
@@ -51,33 +51,36 @@ func Test_DeletePodsCond(t *testing.T) {
 	}
 	var c Common
 
-	t.Logf("Should delete all pods")
+	t.Logf("Should update all pods")
 	c = *CommonDefaults
 	c.Init(fake.NewSimpleClientset(obj))
-	count, err := c.DeletePodsCond("",
+	updCnt, delCnt, err := c.updatePodsCond("",
 		func(pod *corev1.Pod) bool {
 			return true
 		})
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 5)
+	assertEqual(t, updCnt, 5)
+	assertEqual(t, delCnt, 0)
 
-	t.Logf("Should delete a single filterIn() Pod")
+	t.Logf("Should update a single filterIn() Pod")
 	c = *CommonDefaults
 	c.Init(fake.NewSimpleClientset(obj))
-	count, err = c.DeletePodsCond("",
+	updCnt, delCnt, err = c.updatePodsCond("",
 		func(pod *corev1.Pod) bool {
 			return pod.Labels["created_by"] == "foo"
 		})
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 1)
+	assertEqual(t, updCnt, 1)
+	assertEqual(t, delCnt, 0)
 
-	t.Logf("Should not delete any pods")
+	t.Logf("Should not update any pods")
 	c = *CommonDefaults
 	c.Init(fake.NewSimpleClientset(obj))
-	count, err = c.DeletePodsCond("",
+	updCnt, delCnt, err = c.updatePodsCond("",
 		func(pod *corev1.Pod) bool {
 			return false
 		})
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 0)
+	assertEqual(t, updCnt, 0)
+	assertEqual(t, delCnt, 0)
 }

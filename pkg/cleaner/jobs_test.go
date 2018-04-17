@@ -8,8 +8,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func Test_DeleteJobs(t *testing.T) {
-	jobObj := &batchv1.JobList{
+func Test_updateJobs(t *testing.T) {
+	obj := &batchv1.JobList{
 		Items: []batchv1.Job{
 			{
 				ObjectMeta: metav1.ObjectMeta{
@@ -58,36 +58,49 @@ func Test_DeleteJobs(t *testing.T) {
 
 	var c Common
 
-	t.Logf("Should delete all jobs except those in kube-system and monitoring NS")
+	t.Logf("Should update all jobs except those in kube-system and monitoring NS")
 	c = *CommonDefaults
 	c.SkipLabels = []string{"xxx"}
-	c.Init(fake.NewSimpleClientset(jobObj))
-	count, err := c.DeleteJobs()
+	c.Init(fake.NewSimpleClientset(obj))
+	updCnt, delCnt, err := c.updateJobs()
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 2)
+	assertEqual(t, updCnt, 2)
+	assertEqual(t, delCnt, 0)
 
-	t.Logf("Should delete only the jobs in ns1")
+	t.Logf("Should update only the jobs in ns1")
 	c = *CommonDefaults
 	c.SkipLabels = []string{"xxx"}
 	c.Namespace = "ns1"
-	c.Init(fake.NewSimpleClientset(jobObj))
-	count, err = c.DeleteJobs()
+	c.Init(fake.NewSimpleClientset(obj))
+	updCnt, delCnt, err = c.updateJobs()
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 1)
+	assertEqual(t, updCnt, 1)
+	assertEqual(t, delCnt, 0)
 
-	t.Logf("Should not delete any, as the first two have the required label")
+	t.Logf("Should not update any, as the first two have the required label")
 	c = *CommonDefaults
-	c.Init(fake.NewSimpleClientset(jobObj))
-	count, err = c.DeleteJobs()
+	c.Init(fake.NewSimpleClientset(obj))
+	updCnt, delCnt, err = c.updateJobs()
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 0)
+	assertEqual(t, updCnt, 0)
+	assertEqual(t, delCnt, 0)
 
-	t.Logf("Should delete all jobs, as namespaceRE and skipLabels don't match any")
+	t.Logf("Should update all jobs, as namespaceRE and skipLabels don't match any")
 	c = *CommonDefaults
 	c.SkipNamespaceRE = ".*sYsTEM"
 	c.SkipLabels = []string{"xxx"}
-	c.Init(fake.NewSimpleClientset(jobObj))
-	count, err = c.DeleteJobs()
+	c.Init(fake.NewSimpleClientset(obj))
+	updCnt, delCnt, err = c.updateJobs()
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 3)
+	assertEqual(t, updCnt, 3)
+	assertEqual(t, delCnt, 0)
+	t.Logf("... second call should not touch anything")
+	updCnt, delCnt, err = c.updateJobs()
+	assertEqual(t, updCnt, 0)
+	assertEqual(t, delCnt, 0)
+	t.Logf("... another call with a zero TTL should delete all marked ones")
+	c.tagTTL = 0
+	updCnt, delCnt, err = c.updateJobs()
+	assertEqual(t, updCnt, 0)
+	assertEqual(t, delCnt, 3)
 }

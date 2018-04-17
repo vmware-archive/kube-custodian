@@ -6,9 +6,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DeletePods is main entry point from cmd/delete.go
-func (c *Common) DeletePods() (int, error) {
-	return c.DeletePodsCond(c.Namespace,
+type podUpdater struct {
+	pod *corev1.Pod
+}
+
+func (u *podUpdater) Update(c *Common) error {
+	_, err := c.clientset.CoreV1().Pods(u.pod.Namespace).Update(u.pod)
+	return err
+}
+
+func (u *podUpdater) Delete(c *Common) error {
+	return c.clientset.CoreV1().Pods(u.pod.Namespace).Delete(u.pod.Name, &metav1.DeleteOptions{})
+}
+
+func (u *podUpdater) Meta() *metav1.ObjectMeta {
+	return &u.pod.ObjectMeta
+}
+
+// updatePods is main entry point from cmd/delete.go
+func (c *Common) updatePods() (int, int, error) {
+	return c.updatePodsCond(c.Namespace,
 		func(pod *corev1.Pod) bool {
 			if c.skipFromMeta(&pod.ObjectMeta) {
 				return false
@@ -17,14 +34,15 @@ func (c *Common) DeletePods() (int, error) {
 		})
 }
 
-// DeletePodsCond is passed a generic closure to select Pods to delete
-func (c *Common) DeletePodsCond(namespace string, filterIn func(*corev1.Pod) bool) (int, error) {
+// updatePodsCond is passed a generic closure to select Pods to delete
+func (c *Common) updatePodsCond(namespace string, filterIn func(*corev1.Pod) bool) (int, int, error) {
 
-	count := 0
+	updatedCount := 0
+	deletedCount := 0
 	pods, err := c.clientset.Core().Pods(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorf("List pods: %v", err)
-		return count, err
+		return updatedCount, deletedCount, err
 	}
 
 	for _, pod := range pods.Items {
@@ -35,15 +53,9 @@ func (c *Common) DeletePodsCond(namespace string, filterIn func(*corev1.Pod) boo
 
 		log.Debugf("Pod %s.%s about to be touched ...", pod.Namespace, pod.Name)
 
-		count += c.updateState(
-			func() error {
-				_, err := c.clientset.CoreV1().Pods(pod.Namespace).Update(&pod)
-				return err
-			},
-			func() error {
-				return c.clientset.CoreV1().Pods(pod.Namespace).Delete(pod.Name, &metav1.DeleteOptions{})
-			},
-			&pod.ObjectMeta)
+		updCnt, delCnt := c.updateState(&podUpdater{pod: &pod})
+		updatedCount += updCnt
+		deletedCount += delCnt
 	}
-	return count, nil
+	return updatedCount, deletedCount, nil
 }

@@ -8,7 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func Test_DeleteStatefulSets(t *testing.T) {
+func Test_updateStatefulSets(t *testing.T) {
 	obj := &v1beta1.StatefulSetList{
 		Items: []v1beta1.StatefulSet{
 			{
@@ -52,36 +52,49 @@ func Test_DeleteStatefulSets(t *testing.T) {
 	}
 	var c Common
 
-	t.Logf("Should delete all sts except those in kube-system and monitoring NS")
+	t.Logf("Should update all sts except those in kube-system and monitoring NS")
 	c = *CommonDefaults
 	c.SkipLabels = []string{"xxx"}
 	c.Init(fake.NewSimpleClientset(obj))
-	count, err := c.DeleteStatefulSets()
+	updCnt, delCnt, err := c.updateStatefulSets()
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 3)
+	assertEqual(t, updCnt, 3)
+	assertEqual(t, delCnt, 0)
 
-	t.Logf("Should delete only sts in ns1")
+	t.Logf("Should update only sts in ns1")
 	c = *CommonDefaults
 	c.SkipLabels = []string{"xxx"}
 	c.Namespace = "ns1"
 	c.Init(fake.NewSimpleClientset(obj))
-	count, err = c.DeleteStatefulSets()
+	updCnt, delCnt, err = c.updateStatefulSets()
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 1)
+	assertEqual(t, updCnt, 1)
+	assertEqual(t, delCnt, 0)
 
-	t.Logf("Should delete only one sts, as the other two candidates have the 'created_by' label")
+	t.Logf("Should update only one sts, as the other two candidates have the 'created_by' label")
 	c = *CommonDefaults
 	c.Init(fake.NewSimpleClientset(obj))
-	count, err = c.DeleteStatefulSets()
+	updCnt, delCnt, err = c.updateStatefulSets()
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 1)
+	assertEqual(t, updCnt, 1)
+	assertEqual(t, delCnt, 0)
 
-	t.Logf("Should delete all sts, as namespaceRE and skipLabels don't match any")
+	t.Logf("Should update all sts, as namespaceRE and skipLabels don't match any")
 	c = *CommonDefaults
 	c.SkipNamespaceRE = ".*sYsTEM"
 	c.SkipLabels = []string{"xxx"}
 	c.Init(fake.NewSimpleClientset(obj))
-	count, err = c.DeleteStatefulSets()
+	updCnt, delCnt, err = c.updateStatefulSets()
 	assertEqual(t, err, nil)
-	assertEqual(t, count, 5)
+	assertEqual(t, updCnt, 5)
+	assertEqual(t, delCnt, 0)
+	t.Logf("... second call should not touch anything")
+	updCnt, delCnt, err = c.updateStatefulSets()
+	assertEqual(t, updCnt, 0)
+	assertEqual(t, delCnt, 0)
+	t.Logf("... another call with a zero TTL should delete all marked ones")
+	c.tagTTL = 0
+	updCnt, delCnt, err = c.updateStatefulSets()
+	assertEqual(t, updCnt, 0)
+	assertEqual(t, delCnt, 5)
 }

@@ -41,6 +41,12 @@ const (
 	kubeCustodianAnnotationTime = "kube-custodian.bitnami.com/expiration-time"
 )
 
+type updater interface {
+	Update(*Common) error
+	Delete(*Common) error
+	Meta() *metav1.ObjectMeta
+}
+
 // Init initializes Common obj with ready-to-use values,
 // must be called by callers before Run()
 func (c *Common) Init(clientset kubernetes.Interface) {
@@ -58,10 +64,10 @@ func (c *Common) Init(clientset kubernetes.Interface) {
 
 // Run is main entry point for this package
 func (c Common) Run() {
-	c.DeleteDeployments()
-	c.DeleteStatefulSets()
-	c.DeleteJobs()
-	c.DeletePods()
+	c.updateDeployments()
+	c.updateStatefulSets()
+	c.updateJobs()
+	c.updatePods()
 }
 
 func (c *Common) skipFromMeta(meta *metav1.ObjectMeta) bool {
@@ -77,10 +83,12 @@ func (c *Common) skipFromMeta(meta *metav1.ObjectMeta) bool {
 	return skipIt
 }
 
-func (c *Common) updateState(Update func() error, Delete func() error, objMeta *metav1.ObjectMeta) int {
-
+// updateState returns number of objects (updated, deleted)
+func (c *Common) updateState(updater updater) (int, int) {
+	objMeta := updater.Meta()
 	fqName := fmt.Sprintf("%s.%s", objMeta.Name, objMeta.Namespace)
-	cnt := 0
+	updatedCount := 0
+	deletedCount := 0
 	annotations := objMeta.GetAnnotations()
 	if valueStr, found := annotations[kubeCustodianAnnotationTime]; found {
 		value, err := strconv.ParseInt(valueStr, 10, 64)
@@ -90,14 +98,14 @@ func (c *Common) updateState(Update func() error, Delete func() error, objMeta *
 		expiredSecs := c.timeStamp - (value + c.tagTTL)
 		log.Debugf("%s already has annotation %s: %s, will expire in %.2f hours",
 			fqName, kubeCustodianAnnotationTime, valueStr, -float64(expiredSecs)/3600)
-		if expiredSecs > 0 {
+		if expiredSecs >= 0 {
 			log.Debugf("%s%s TTL expired %d seconds ago, deleting",
 				c.dryRunStr, fqName, expiredSecs)
 			if !c.DryRun {
-				if err := Delete(); err != nil {
+				if err := updater.Delete(c); err != nil {
 					log.Errorf("failed to delete %s with error: %v", fqName, err)
 				} else {
-					cnt++
+					deletedCount++
 				}
 			}
 		}
@@ -108,12 +116,12 @@ func (c *Common) updateState(Update func() error, Delete func() error, objMeta *
 		if !c.DryRun {
 			metav1.SetMetaDataAnnotation(objMeta,
 				kubeCustodianAnnotationTime, timeStampStr)
-			if err := Update(); err != nil {
+			if err := updater.Update(c); err != nil {
 				log.Errorf("failed to update %s with error: %v", fqName, err)
 			} else {
-				cnt++
+				updatedCount++
 			}
 		}
 	}
-	return cnt
+	return updatedCount, deletedCount
 }
