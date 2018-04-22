@@ -174,8 +174,8 @@
 [[projects]]
   name = "k8s.io/api"
   packages = ["admissionregistration/v1alpha1","admissionregistration/v1beta1","apps/v1","apps/v1beta1","apps/v1beta2","authentication/v1","authentication/v1beta1","authorization/v1","authorization/v1beta1","autoscaling/v1","autoscaling/v2beta1","batch/v1","batch/v1beta1","batch/v2alpha1","certificates/v1beta1","core/v1","events/v1beta1","extensions/v1beta1","networking/v1","policy/v1beta1","rbac/v1","rbac/v1alpha1","rbac/v1beta1","scheduling/v1alpha1","settings/v1alpha1","storage/v1","storage/v1alpha1","storage/v1beta1"]
-  revision = "11147472b7c934c474a2c484af3c0c5210b7a3af"
-  version = "kubernetes-1.9.0-beta.2"
+  revision = "af4bc157c3a209798fc897f6d4aaaaeb6c2e0d6a"
+  version = "kubernetes-1.9.0"
 
 [[projects]]
   name = "k8s.io/apimachinery"
@@ -197,6 +197,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "91fda01ec6c9eb2ed793b03543d5fc3bd6abfbd545a89a5dae17dd42715c405c"
+  inputs-digest = "f3a7b08453f6ee6fecf9be45334ca58abec97831d6838cc33abf654a422de921"
   solver-name = "gps-cdcl"
   solver-version = 1
