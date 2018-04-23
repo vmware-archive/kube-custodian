@@ -4,11 +4,22 @@ import (
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
 func Test_updateDeployments(t *testing.T) {
+	nss := &corev1.NamespaceList{
+		Items: []corev1.Namespace{
+			{ObjectMeta: metav1.ObjectMeta{Name: "ns1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "ns2"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "ns3"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "ns4"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "kube-system"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "monitoring"}},
+		},
+	}
 	obj := &appsv1.DeploymentList{
 		Items: []appsv1.Deployment{
 			{
@@ -63,9 +74,9 @@ func Test_updateDeployments(t *testing.T) {
 	t.Logf("Should update all deploys except those in kube-system and monitoring NS")
 	c = *CommonDefaults
 	c.SkipLabels = []string{"xxx"}
-	c.Init(fake.NewSimpleClientset(obj))
-	updCnt, delCnt, err := c.updateDeployments()
-	assertEqual(t, err, nil)
+	c.Init(fake.NewSimpleClientset(nss, obj))
+	updCnt, delCnt, errCnt := c.Run()
+	assertEqual(t, errCnt, 0)
 	assertEqual(t, updCnt, 3)
 	assertEqual(t, delCnt, 1)
 
@@ -73,17 +84,17 @@ func Test_updateDeployments(t *testing.T) {
 	c = *CommonDefaults
 	c.SkipLabels = []string{"xxx"}
 	c.Namespace = "ns1"
-	c.Init(fake.NewSimpleClientset(obj))
-	updCnt, delCnt, err = c.updateDeployments()
-	assertEqual(t, err, nil)
+	c.Init(fake.NewSimpleClientset(nss, obj))
+	updCnt, delCnt, errCnt = c.Run()
+	assertEqual(t, errCnt, 0)
 	assertEqual(t, updCnt, 1)
 	assertEqual(t, delCnt, 0)
 
 	t.Logf("Should update only one deploy, as the other two candidates have the 'created_by' label")
 	c = *CommonDefaults
-	c.Init(fake.NewSimpleClientset(obj))
-	updCnt, delCnt, err = c.updateDeployments()
-	assertEqual(t, err, nil)
+	c.Init(fake.NewSimpleClientset(nss, obj))
+	updCnt, delCnt, errCnt = c.Run()
+	assertEqual(t, errCnt, 0)
 	assertEqual(t, updCnt, 1)
 	assertEqual(t, delCnt, 1)
 
@@ -91,18 +102,18 @@ func Test_updateDeployments(t *testing.T) {
 	c = *CommonDefaults
 	c.SkipNamespaceRE = ".*sYsTEM"
 	c.SkipLabels = []string{"xxx"}
-	c.Init(fake.NewSimpleClientset(obj))
-	updCnt, delCnt, err = c.updateDeployments()
-	assertEqual(t, err, nil)
+	c.Init(fake.NewSimpleClientset(nss, obj))
+	updCnt, delCnt, errCnt = c.Run()
+	assertEqual(t, errCnt, 0)
 	assertEqual(t, updCnt, 5)
 	assertEqual(t, delCnt, 1)
 	t.Logf("... second call should not touch anything")
-	updCnt, delCnt, err = c.updateDeployments()
+	updCnt, delCnt, errCnt = c.Run()
 	assertEqual(t, updCnt, 0)
 	assertEqual(t, delCnt, 0)
 	t.Logf("... another call with a zero TTL should delete all marked ones")
 	c.tagTTL = 0
-	updCnt, delCnt, err = c.updateDeployments()
+	updCnt, delCnt, errCnt = c.Run()
 	assertEqual(t, updCnt, 0)
 	assertEqual(t, delCnt, 5)
 

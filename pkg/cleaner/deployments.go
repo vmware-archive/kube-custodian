@@ -24,10 +24,10 @@ func (u *deployUpdater) Meta() *metav1.ObjectMeta {
 }
 
 // updateDeployments ...
-func (c *Common) updateDeployments() (int, int, error) {
+func (c *Common) updateDeployments(namespace string) (int, int, error) {
 	updatedCount := 0
 	deletedCount := 0
-	deploys, err := c.clientset.AppsV1().Deployments(c.Namespace).List(metav1.ListOptions{})
+	deploys, err := c.clientset.AppsV1().Deployments(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorf("List deploys: %v", err)
 		return updatedCount, deletedCount, err

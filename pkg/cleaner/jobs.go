@@ -24,10 +24,10 @@ func (u *jobUpdater) Delete(c *Common) error {
 }
 
 // updateJobs ...
-func (c *Common) updateJobs() (int, int, error) {
+func (c *Common) updateJobs(namespace string) (int, int, error) {
 	updatedCount := 0
 	deletedCount := 0
-	jobs, err := c.clientset.BatchV1().Jobs(c.Namespace).List(metav1.ListOptions{})
+	jobs, err := c.clientset.BatchV1().Jobs(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorf("List jobs: %v", err)
 		return updatedCount, deletedCount, err

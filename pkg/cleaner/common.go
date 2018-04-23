@@ -7,6 +7,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -62,12 +63,55 @@ func (c *Common) Init(clientset kubernetes.Interface) {
 	c.clientset = clientset
 }
 
-// Run is main entry point for this package
-func (c Common) Run() {
-	c.updateDeployments()
-	c.updateStatefulSets()
-	c.updateJobs()
-	c.updatePods()
+// Run is main entry point for this package, will loop over all namespaces
+// skip those matching SkipLabels or SkipNamespaceRE, then call update<Type>()
+// on each
+func (c Common) Run() (int, int, int) {
+	var nss *corev1.NamespaceList
+	var err error
+	var updatedCount, deletedCount, errorCount int
+
+	if c.Namespace != "" {
+		ns, err := c.clientset.Core().Namespaces().Get(c.Namespace, metav1.GetOptions{})
+		if err != nil {
+			log.Errorf("Error getting namespace: %s", c.Namespace)
+			return 0, 0, 1
+		}
+		nss = &corev1.NamespaceList{Items: []corev1.Namespace{*ns}}
+
+	} else {
+		nss, err = c.clientset.Core().Namespaces().List(metav1.ListOptions{})
+		if err != nil {
+			log.Errorf("List namespaces: %v", err)
+			return 0, 0, 1
+		}
+	}
+
+	for _, ns := range nss.Items {
+		if c.skipNamespaceRegexp.MatchString(ns.Name) {
+			log.Debugf("Namespace %s skipped", ns.Name)
+			continue
+		}
+		if c.skipFromMeta(&ns.ObjectMeta) {
+			continue
+		}
+		log.Debugf("Scanning namespace: %s", ns.Name)
+		updateFunctions := []func(string) (int, int, error){
+			c.updateDeployments,
+			c.updateStatefulSets,
+			c.updateJobs,
+			c.updatePods,
+		}
+		for _, updateFunc := range updateFunctions {
+			updCnt, delCnt, err := updateFunc(ns.Name)
+			if err != nil {
+				errorCount++
+			}
+			updatedCount += updCnt
+			deletedCount += delCnt
+		}
+	}
+	return updatedCount, deletedCount, errorCount
 }
 
 func (c *Common) skipFromMeta(meta *metav1.ObjectMeta) bool {
@@ -77,7 +121,7 @@ func (c *Common) skipFromMeta(meta *metav1.ObjectMeta) bool {
 		log.Debugf("%s.%s skipped from meta.Namespace", meta.Name, meta.Namespace)
 		skipIt = true
 	case utils.LabelsSubSet(meta.Labels, c.SkipLabels):
-		log.Debugf("%s.%s skipped from meta.Labels", meta.Name, meta.Labels)
+		log.Debugf("%s.%s skipped from meta.Labels", meta.Name, meta.Namespace)
 		skipIt = true
 	}
 	return skipIt

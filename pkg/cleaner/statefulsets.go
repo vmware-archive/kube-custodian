@@ -24,10 +24,10 @@ func (u *stsUpdater) Meta() *metav1.ObjectMeta {
 }
 
 // updateStatefulSets ...
-func (c *Common) updateStatefulSets() (int, int, error) {
+func (c *Common) updateStatefulSets(namespace string) (int, int, error) {
 	updatedCount := 0
 	deletedCount := 0
-	stss, err := c.clientset.AppsV1beta1().StatefulSets(c.Namespace).List(metav1.ListOptions{})
+	stss, err := c.clientset.AppsV1beta1().StatefulSets(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorf("List StatefulSets: %v", err)
 		return updatedCount, deletedCount, err

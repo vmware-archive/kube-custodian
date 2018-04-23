@@ -9,6 +9,15 @@ import (
 )
 
 func Test_updatePodsCond(t *testing.T) {
+	nss := &corev1.NamespaceList{
+		Items: []corev1.Namespace{
+			{ObjectMeta: metav1.ObjectMeta{Name: "ns1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "ns2"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "ns3"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "kube-system"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "monitoring"}},
+		},
+	}
 	obj := &corev1.PodList{
 		Items: []corev1.Pod{
 			{
@@ -53,8 +62,8 @@ func Test_updatePodsCond(t *testing.T) {
 
 	t.Logf("Should update all pods")
 	c = *CommonDefaults
-	c.Init(fake.NewSimpleClientset(obj))
-	updCnt, delCnt, err := c.updatePodsCond("",
+	c.Init(fake.NewSimpleClientset(nss, obj))
+	updCnt, delCnt, err := c.updatePodsCond(c.Namespace,
 		func(pod *corev1.Pod) bool {
 			return true
 		})
@@ -64,8 +73,8 @@ func Test_updatePodsCond(t *testing.T) {
 
 	t.Logf("Should update a single filterIn() Pod")
 	c = *CommonDefaults
-	c.Init(fake.NewSimpleClientset(obj))
-	updCnt, delCnt, err = c.updatePodsCond("",
+	c.Init(fake.NewSimpleClientset(nss, obj))
+	updCnt, delCnt, err = c.updatePodsCond(c.Namespace,
 		func(pod *corev1.Pod) bool {
 			return pod.Labels["created_by"] == "foo"
 		})
@@ -75,8 +84,8 @@ func Test_updatePodsCond(t *testing.T) {
 
 	t.Logf("Should not update any pods")
 	c = *CommonDefaults
-	c.Init(fake.NewSimpleClientset(obj))
-	updCnt, delCnt, err = c.updatePodsCond("",
+	c.Init(fake.NewSimpleClientset(nss, obj))
+	updCnt, delCnt, err = c.updatePodsCond(c.Namespace,
 		func(pod *corev1.Pod) bool {
 			return false
 		})

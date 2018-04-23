@@ -24,8 +24,8 @@ func (u *podUpdater) Meta() *metav1.ObjectMeta {
 }
 
 // updatePods is main entry point from cmd/delete.go
-func (c *Common) updatePods() (int, int, error) {
-	return c.updatePodsCond(c.Namespace,
+func (c *Common) updatePods(namespace string) (int, int, error) {
+	return c.updatePodsCond(namespace,
 		func(pod *corev1.Pod) bool {
 			if c.skipFromMeta(&pod.ObjectMeta) {
 				return false

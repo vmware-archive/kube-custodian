@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"os"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -54,13 +56,14 @@ var runCmd = &cobra.Command{
 		if len(c.SkipLabels) < 1 {
 			log.Fatal("At least one skip-labels is needed")
 		}
-		log.Debugf("Skipped workloads with labels: %v ...", c.SkipLabels)
+		log.Debugf("Skipping workloads with labels: %v ...", c.SkipLabels)
 
 		c.SkipNamespaceRE, err = flags.GetString(flagSkipNamespaceRe)
 		if err != nil {
 			log.Fatal(err)
 		}
 		c.Init(NewKubeClient(cmd))
-		c.Run()
+		_, _, errCnt := c.Run()
+		os.Exit(errCnt)
 	},
 }
