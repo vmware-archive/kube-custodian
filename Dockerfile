@@ -6,11 +6,10 @@ ARG ARCH=amd64
 
 RUN apk update && apk add git ca-certificates
 
-# Unfortunately bitly/oauth2_proxy is not vendored - FYI built OK on 2018-03-29
 # Checkout specific version
-# RUN go get -d ${SRC_REPO}
 COPY . /go/src/${SRC_REPO}
-RUN git -C ${GOPATH}/src/${SRC_REPO} checkout -b build-${ARCH}-${SRC_TAG} ${SRC_TAG}
+# RUN go get -d ${SRC_REPO}
+# RUN git -C ${GOPATH}/src/${SRC_REPO} checkout -b build-${ARCH}-${SRC_TAG} ${SRC_TAG}
 RUN GOARCH=${ARCH} go get ${SRC_REPO}
 RUN find /go/bin -name kube-custodian -type f | xargs -I@ install @ /
 
