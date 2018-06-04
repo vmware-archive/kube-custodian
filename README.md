@@ -10,7 +10,8 @@ workloads that become forgotten by developers, holding resources thus
 potentially voiding new workloads from scheduling.
 
 `kube-custodian` will mark for later deletion those workloads (Deployments,
-StatefulSets, Jobs, Pods) lacking `--required-labels`.
+StatefulSets, Jobs, Pods) lacking `--required-labels` unless their
+namespace has them.
 
 For example, to mark for later deletion all workloads not having the `created_by`
 label, run:
@@ -29,7 +30,6 @@ Then, 24h later same run as above will:
 - Delete all workloads for which:
 
   (`kube-custodian.bitnami.com/expiration-time` + `tag-ttl`) >= `now`
-
 
 
 ## Install
