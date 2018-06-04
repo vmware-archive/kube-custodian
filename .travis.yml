@@ -18,7 +18,6 @@ services:
 env:
   global:
     - ARCHS="amd64 arm arm64"
-    - secure: "L0GQPhdR5x0cXWur5fJRD/73ftU93F90th13fvUniVBF0KA6WJicWP8DNJe5cjzvo8+sbhtUBl6i+pCUOOut3tkY8i5KtFG3lsYqYfsiM3B96bXeSyrUjtYzkFpItQZUmUSv6uPvPo5lTCMAmweI/A9PBSsGBptB92z3RNl8l8zi3xXG+rLhUP+9Z1SoE8flHEqmUgYHGQe15FYpAKKa31y/4mg41db0UrOocGAoYg0lXFBYTEZKJO1lCHGFBMEYCoOIX86Pph2fyrWNYTG+PGnCH85PsPbGm8rK2KHy4u8FSBZAHZHRH/EaN19SmOKSGizK1sC4QEuLqPh5GH9DwKQcaFD8dpLHJX7YRCTA9C7Ty7bkjQeplAVF5QDGAmS4qSFSPb0934KQ9V4FTmh47BjhwQudQrTShJavvnVrl5EfAdaGAEPfUURBPIKSNgsIqdMStysIFrgcSfqrcLmph1u0gnYdpvkQ/Jutr/agcTRVrHwvvkM3AehZo9jdZnEA1XA4GGVQXGQEAiXxYfmRRrLvcA/dTyROoh1fO3w31aOn6NXzZBEPHxP3azDWzFEGw+4Ampc+NAuol+CDsDY0o7gelh7Y+0wVB0L/vl2H4jEq3dnI4mFxv8R5jzObpEGxu6f5yTmuInMEIwDzFDeiCKXFsMk8MNaRcYSWPxcsGUI="
 
 before_install: # update to 17.09 to get COPY --from (multistage builds)
   - |
@@ -33,7 +32,6 @@ before_install: # update to 17.09 to get COPY --from (multistage builds)
 
 script:
   - |
-    go get github.com/Masterminds/glide
     make build
     make test
     [[ "$TRAVIS_OS_NAME" != "linux" || "$TRAVIS_EVENT_TYPE" == "push" ]] && exit 0
@@ -51,6 +49,6 @@ after_success:
           "$TRAVIS_PULL_REQUEST" == false ]]; then
       docker login -u="${DOCKER_USERNAME:?}" -p="${DOCKER_PASSWORD:?}";
       for arch in ${ARCHS:?}; do
-        make docker-push GOARCH=${arch} VERSION=${TRAVIS_BRANCH}
+        echo "DISABLED: make docker-push GOARCH=${arch} VERSION=${TRAVIS_BRANCH}"
       done
     fi

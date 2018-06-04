@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
-	utils "github.com/jjo/kube-custodian/pkg/utils"
+	utils "github.com/bitnami-labs/kube-custodian/pkg/utils"
 )
 
 const (
@@ -57,7 +57,6 @@ var rootCmd = &cobra.Command{
 		// Need either --all-namespaces or --namespace=...
 		allNS, _ := flags.GetBool(flagAllNamespaces)
 		namespace, _ := flags.GetString("namespace")
-		log.Debugf("jjo: %v %v", allNS, namespace)
 		if allNS == (len(namespace) > 0) {
 			log.Fatalf("Cowardly refusing to use a default namespace, provide --namespace=<NS> xor --all-namespaces")
 		}

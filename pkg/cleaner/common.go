@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	utils "github.com/jjo/kube-custodian/pkg/utils"
+	utils "github.com/bitnami-labs/kube-custodian/pkg/utils"
 )
 
 // Common represents flags set from cmd/, conversion of these

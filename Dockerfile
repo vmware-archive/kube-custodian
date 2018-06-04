@@ -1,6 +1,6 @@
 FROM golang:1.9.4-alpine as build
 
-ARG SRC_REPO=github.com/jjo/kube-custodian
+ARG SRC_REPO=github.com/bitnami-labs/kube-custodian
 ARG SRC_TAG=master
 ARG ARCH=amd64
 

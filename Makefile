@@ -18,7 +18,7 @@ DOCKER_IMG_FULL=$(DOCKER_IMG):$(VERSION)
 endif
 
 DOCKER_REPO ?= quay.io
-DOCKER_IMG ?= $(DOCKER_REPO)/jjo/kube-custodian
+DOCKER_IMG ?= $(DOCKER_REPO)/bitnami-labs/kube-custodian
 
 
 all: build

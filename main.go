@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/jjo/kube-custodian/cmd"
+	"github.com/bitnami-labs/kube-custodian/cmd"
 	log "github.com/sirupsen/logrus"
 )
 
