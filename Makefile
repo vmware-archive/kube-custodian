@@ -3,7 +3,8 @@ LDFLAGS ?= -ldflags="-s -w -X main.version=$(VERSION) -X main.revision=$(REVISIO
 VERSION ?= master
 GOARCH ?= amd64
 
-GOSRC = $(shell find *.go pkg cmd -name '*.go')
+GOPKGS = . ./cmd/... ./pkg/...
+GOSRC = $(shell go list -f '{{$$d := .Dir}}{{range .GoFiles}}{{$$d}}/{{.}} {{end}}' $(GOPKGS))
 
 ifeq ($(GOARCH), arm)
 DOCKERFILE_SED_EXPR?=s,FROM alpine:,FROM multiarch/alpine:armhf-v,
@@ -15,7 +16,6 @@ else
 DOCKERFILE_SED_EXPR?=
 DOCKER_IMG_FULL=$(DOCKER_IMG):$(VERSION)
 endif
-GOPKGS = $(shell glide novendor)
 
 DOCKER_REPO ?= quay.io
 DOCKER_IMG ?= $(DOCKER_REPO)/jjo/kube-custodian
@@ -28,8 +28,19 @@ build: bin/$(NAME)
 bin/$(NAME): $(GOSRC)
 	GOARCH=$(GOARCH) go build $(LDFLAGS) -o bin/$(NAME)
 
+check: lint vet inef
+
 lint:
 	golint $(GOPKGS)
+
+vet:
+	go vet $(GOPKGS)
+
+inef:
+	ineffassign .
+
+fmt:
+	gofmt -s -w $(GOSRC)
 
 test:
 	go test -v -cover $(GOPKGS)
@@ -56,4 +67,4 @@ multiarch-setup:
 	docker run --rm --privileged multiarch/qemu-user-static:register
 	dpkg -l qemu-user-static
 
-.PHONY: all build lint test clean docker-build docker-push docker-clean
+.PHONY: all build check lint vet inef test clean docker-build docker-push docker-clean

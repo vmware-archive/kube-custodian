@@ -9,7 +9,7 @@ On Kubernetes clusters for development, it's pretty common to have
 workloads that become forgotten by developers, holding resources thus
 potentially voiding new workloads from scheduling.
 
-`kube-custodian` will make for later deletion those workloads (Deployments,
+`kube-custodian` will mark for later deletion those workloads (Deployments,
 StatefulSets, Jobs, Pods) lacking `--required-labels`.
 
 For example, to mark for later deletion all workloads not having the `created_by`

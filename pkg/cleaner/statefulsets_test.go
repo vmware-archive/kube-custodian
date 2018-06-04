@@ -99,12 +99,12 @@ func Test_updateStatefulSets(t *testing.T) {
 	assertEqual(t, updCnt, 5)
 	assertEqual(t, delCnt, 0)
 	t.Logf("... second call should not touch anything")
-	updCnt, delCnt, errCnt = c.Run()
+	updCnt, delCnt, _ = c.Run()
 	assertEqual(t, updCnt, 0)
 	assertEqual(t, delCnt, 0)
 	t.Logf("... another call with a zero TTL should delete all marked ones")
 	c.tagTTL = 0
-	updCnt, delCnt, errCnt = c.Run()
+	updCnt, delCnt, _ = c.Run()
 	assertEqual(t, updCnt, 0)
 	assertEqual(t, delCnt, 5)
 }
