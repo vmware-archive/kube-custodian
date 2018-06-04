@@ -8,6 +8,8 @@ go:
   # first value (ditto for `os` below)
   - 1.9.x
 
+go_import_path: github.com/bitnami-labs/kube-custodian
+
 os:
   - linux
   - osx

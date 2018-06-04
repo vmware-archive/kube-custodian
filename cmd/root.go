@@ -14,8 +14,6 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-
-	utils "github.com/bitnami-labs/kube-custodian/pkg/utils"
 )
 
 const (
@@ -86,15 +84,20 @@ func Execute() error {
 	return nil
 }
 
-// NewKubeClient creates a new kube Client  from already setup clientConfig
-func NewKubeClient(cmd *cobra.Command) *kubernetes.Clientset {
-	// flags := cmd.Flags()
-	clientset, err := utils.GetClientOutOfCluster()
+// NewKubeClient creates a new kubernetes Clientset from already setup clientConfig
+func NewKubeClient() *kubernetes.Clientset {
+	c, err := clientConfig.ClientConfig()
+
 	if err != nil {
 		log.Fatalf("NewKubeClient: %v", err)
 	}
-	return clientset
 
+	clientset, err := kubernetes.NewForConfig(c)
+	if err != nil {
+		log.Fatalf("NewKubeClient: failed to create clienset: %v", err)
+	}
+
+	return clientset
 }
 
 type logFormatter struct {

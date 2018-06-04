@@ -39,7 +39,7 @@ var CommonDefaults = &Common{
 }
 
 const (
-	kubeCustodianAnnotationTime = "kube-custodian.bitnami.com/expiration-time"
+	kubeCustodianAnnotationTime = "kube-custodian.bitnami.com/expiration-mark"
 )
 
 type updater interface {

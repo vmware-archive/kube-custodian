@@ -6,10 +6,7 @@ ARG ARCH=amd64
 
 RUN apk update && apk add git ca-certificates
 
-# Checkout specific version
 COPY . /go/src/${SRC_REPO}
-# RUN go get -d ${SRC_REPO}
-# RUN git -C ${GOPATH}/src/${SRC_REPO} checkout -b build-${ARCH}-${SRC_TAG} ${SRC_TAG}
 RUN GOARCH=${ARCH} go get ${SRC_REPO}
 RUN find /go/bin -name kube-custodian -type f | xargs -I@ install @ /
 

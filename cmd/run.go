@@ -62,7 +62,7 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.Init(NewKubeClient(cmd))
+		c.Init(NewKubeClient())
 		_, _, errCnt := c.Run()
 		os.Exit(errCnt)
 	},
