@@ -46,11 +46,12 @@ script:
 
 after_success:
   - |
+    echo "DISABLED: travis -> after_success"; exit 0
     [[ "$TRAVIS_OS_NAME" == "linux" ]] || exit 0
     if [[ "$TRAVIS_BRANCH" == master && \
           "$TRAVIS_PULL_REQUEST" == false ]]; then
       docker login -u="${DOCKER_USERNAME:?}" -p="${DOCKER_PASSWORD:?}";
       for arch in ${ARCHS:?}; do
-        echo "DISABLED: make docker-push GOARCH=${arch} VERSION=${TRAVIS_BRANCH}"
+        make docker-push GOARCH=${arch} VERSION=${TRAVIS_BRANCH}
       done
     fi
