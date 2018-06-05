@@ -1,0 +1,56 @@
+language: go
+
+os:
+  - linux
+
+go:
+  # NB: order matters - matrix items that don't specify will use the
+  # first value (ditto for `os` below)
+  - 1.9.x
+
+go_import_path: github.com/bitnami-labs/kube-custodian
+
+os:
+  - linux
+  - osx
+
+services:
+  - docker
+
+env:
+  global:
+    - ARCHS="amd64 arm arm64"
+
+before_install: # update to 17.09 to get COPY --from (multistage builds)
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" && \
+          "$TRAVIS_EVENT_TYPE" != "push" ]]; then
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
+      sudo apt-get update
+      sudo apt-get -y install docker-ce
+      sudo apt-get -y install qemu-user-static
+    fi
+
+script:
+  - |
+    make build
+    make test
+    [[ "$TRAVIS_OS_NAME" != "linux" || "$TRAVIS_EVENT_TYPE" == "push" ]] && exit 0
+    make multiarch-setup
+    VERSION=${TRAVIS_BRANCH}
+    [[ "$TRAVIS_PULL_REQUEST" == true ]] && VERSION=HEAD
+    for arch in ${ARCHS:?}; do
+      make docker-build GOARCH=${arch} VERSION=${VERSION}
+    done
+
+after_success:
+  - |
+    [[ "$TRAVIS_OS_NAME" == "linux" ]] || exit 0
+    if [[ "$TRAVIS_BRANCH" == master && \
+          "$TRAVIS_PULL_REQUEST" == false ]]; then
+      docker login -u="${DOCKER_USERNAME:?}" -p="${DOCKER_PASSWORD:?}";
+      for arch in ${ARCHS:?}; do
+        echo "DISABLED: make docker-push GOARCH=${arch} VERSION=${TRAVIS_BRANCH}"
+      done
+    fi
