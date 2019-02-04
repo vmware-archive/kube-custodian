@@ -30,6 +30,9 @@ bin/$(NAME): $(GOSRC)
 
 check: lint vet inef
 
+dep:
+	GO111MODULE=on go mod tidy
+	GO111MODULE=on go mod vendor
 lint:
 	golint $(GOPKGS)
 
