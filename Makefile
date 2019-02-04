@@ -43,7 +43,7 @@ fmt:
 	gofmt -s -w $(GOSRC)
 
 test:
-	go test -v -cover $(GOPKGS)
+	go test -v -cover -count=1 $(GOPKGS)
 
 clean:
 	rm -fv bin/$(NAME)
