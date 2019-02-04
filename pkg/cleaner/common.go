@@ -146,10 +146,10 @@ func (c *Common) updateState(updater updater) (int, int) {
 			log.Debugf("%s%s TTL expired %d seconds ago, deleting",
 				c.dryRunStr, fqName, expiredSecs)
 			if !c.DryRun {
-				if err := updater.Delete(c); err != nil {
-					log.Errorf("failed to delete %s with error: %v", fqName, err)
-				} else {
+				if err := updater.Delete(c); err == nil {
 					deletedCount++
+				} else {
+					log.Errorf("failed to delete %s with error: %v", fqName, err)
 				}
 			}
 		}
@@ -160,10 +160,10 @@ func (c *Common) updateState(updater updater) (int, int) {
 		if !c.DryRun {
 			metav1.SetMetaDataAnnotation(objMeta,
 				kubeCustodianAnnotationTime, timeStampStr)
-			if err := updater.Update(c); err != nil {
-				log.Errorf("failed to update %s with error: %v", fqName, err)
-			} else {
+			if err := updater.Update(c); err == nil {
 				updatedCount++
+			} else {
+				log.Errorf("failed to update %s with error: %v", fqName, err)
 			}
 		}
 	}
