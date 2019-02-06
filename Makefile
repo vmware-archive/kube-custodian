@@ -2,6 +2,7 @@ NAME ?= kube-custodian
 LDFLAGS ?= -ldflags="-s -w -X main.version=$(VERSION) -X main.revision=$(REVISION)"
 VERSION ?= master
 GOARCH ?= amd64
+GOFLAGS = -mod=vendor # ensure we always honour vendor/
 
 GOPKGS = . ./cmd/... ./pkg/...
 GOSRC = $(shell go list -f '{{$$d := .Dir}}{{range .GoFiles}}{{$$d}}/{{.}} {{end}}' $(GOPKGS))
@@ -20,24 +21,27 @@ endif
 DOCKER_REPO ?= quay.io
 DOCKER_IMG ?= $(DOCKER_REPO)/bitnami-labs/kube-custodian
 
+# -mod=vendor is accepted only if Go Modules are turned on
+export GO111MODULE = on
 
 all: build
 
 build: bin/$(NAME)
 
 bin/$(NAME): $(GOSRC)
-	GOARCH=$(GOARCH) go build $(LDFLAGS) -o bin/$(NAME)
+	GOARCH=$(GOARCH) go build $(GOFLAGS) $(LDFLAGS) -o bin/$(NAME)
 
 check: lint vet inef
 
 dep:
-	GO111MODULE=on go mod tidy
-	GO111MODULE=on go mod vendor
+	go mod tidy
+	go mod vendor
+
 lint:
 	golint $(GOPKGS)
 
 vet:
-	go vet $(GOPKGS)
+	go vet $(GOFLAGS) $(GOPKGS)
 
 inef:
 	ineffassign .
@@ -46,7 +50,7 @@ fmt:
 	gofmt -s -w $(GOSRC)
 
 test:
-	go test -v -cover -count=1 $(GOPKGS)
+	go test -v $(GOFLAGS) -cover -count=1 $(GOPKGS)
 
 clean:
 	rm -fv bin/$(NAME)
