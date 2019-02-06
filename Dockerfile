@@ -1,4 +1,4 @@
-FROM golang:1.9.4-alpine as build
+FROM golang:1.11.4-alpine as build
 
 ARG SRC_REPO=github.com/bitnami-labs/kube-custodian
 ARG SRC_TAG=master

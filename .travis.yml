@@ -6,7 +6,7 @@ os:
 go:
   # NB: order matters - matrix items that don't specify will use the
   # first value (ditto for `os` below)
-  - 1.9.x
+  - 1.11.x
 
 go_import_path: github.com/bitnami-labs/kube-custodian
 
@@ -31,6 +31,9 @@ before_install: # update to 17.09 to get COPY --from (multistage builds)
       sudo apt-get -y install docker-ce
       sudo apt-get -y install qemu-user-static
     fi
+
+install:
+  - echo dependencies are vendored
 
 script:
   - |
