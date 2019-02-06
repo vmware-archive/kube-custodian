@@ -4,8 +4,7 @@ VERSION ?= master
 GOARCH ?= amd64
 GOFLAGS = -mod=vendor # ensure we always honour vendor/
 
-GOPKGS = . ./cmd/... ./pkg/...
-GOSRC = $(shell go list -f '{{$$d := .Dir}}{{range .GoFiles}}{{$$d}}/{{.}} {{end}}' $(GOPKGS))
+GOPKGS = ./...
 
 ifeq ($(GOARCH), arm)
 DOCKERFILE_SED_EXPR?=s,FROM alpine:,FROM multiarch/alpine:armhf-v,
@@ -28,7 +27,7 @@ all: build
 
 build: bin/$(NAME)
 
-bin/$(NAME): $(GOSRC)
+bin/$(NAME):
 	GOARCH=$(GOARCH) go build $(GOFLAGS) $(LDFLAGS) -o bin/$(NAME)
 
 check: lint vet inef
@@ -47,7 +46,7 @@ inef:
 	ineffassign .
 
 fmt:
-	gofmt -s -w $(GOSRC)
+	go fmt $(GOPKGS)
 
 test:
 	go test -v $(GOFLAGS) -cover -count=1 $(GOPKGS)
@@ -74,4 +73,4 @@ multiarch-setup:
 	docker run --rm --privileged multiarch/qemu-user-static:register
 	dpkg -l qemu-user-static
 
-.PHONY: all build check lint vet inef test clean docker-build docker-push docker-clean
+.PHONY: all build bin/* check lint vet inef test clean docker-build docker-push docker-clean
