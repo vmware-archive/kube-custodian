@@ -4,7 +4,7 @@ ARG SRC_REPO=github.com/bitnami-labs/kube-custodian
 ARG SRC_TAG=master
 ARG ARCH=amd64
 
-RUN apt-get update
+RUN apt-get upgrade
 
 COPY . /go/src/${SRC_REPO}
 RUN GOARCH=${ARCH} go get ${SRC_REPO}
