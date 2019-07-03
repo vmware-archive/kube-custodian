@@ -1,16 +1,16 @@
-FROM golang:1.11.4-alpine as build
+FROM golang:1.11.4 as build
 
 ARG SRC_REPO=github.com/bitnami-labs/kube-custodian
 ARG SRC_TAG=master
 ARG ARCH=amd64
 
-RUN apk update && apk add git ca-certificates
+RUN apt-get upgrade
 
 COPY . /go/src/${SRC_REPO}
 RUN GOARCH=${ARCH} go get ${SRC_REPO}
 RUN find /go/bin -name kube-custodian -type f | xargs -I@ install @ /
 
-FROM alpine:3.7
+FROM bitnami/minideb:stretch
 MAINTAINER JuanJo Ciarlante <juanjosec@gmail.com>
 
 USER 1001
