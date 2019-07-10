@@ -7,10 +7,10 @@ GOFLAGS = -mod=vendor # ensure we always honour vendor/
 GOPKGS = ./...
 
 ifeq ($(GOARCH), arm)
-DOCKERFILE_SED_EXPR?=s,FROM bitnami/minideb:stretch,FROM armhf/debian:stretch,
+DOCKERFILE_SED_EXPR?=s,FROM bitnami/minideb:stretch,FROM armhf/debian:stretch-slim,
 DOCKER_IMG_FULL=$(DOCKER_IMG):arm-$(VERSION)
 else ifeq ($(GOARCH), arm64)
-DOCKERFILE_SED_EXPR?=s,FROM bitnami/minideb:stretch,FROM aarch64/debian:stretch
+DOCKERFILE_SED_EXPR?=s,FROM bitnami/minideb:stretch,FROM aarch64/debian:stretch-slim,
 DOCKER_IMG_FULL=$(DOCKER_IMG):arm64-$(VERSION)
 else
 DOCKERFILE_SED_EXPR?=
